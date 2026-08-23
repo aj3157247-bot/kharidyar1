@@ -6,18 +6,18 @@ import threading
 from kivy.app import App
 from kivy.clock import Clock
 from kivy.core.text import LabelBase
-from kivy.core.window import Window
 from kivy.metrics import dp
-from kivy.properties import BooleanProperty, StringProperty
+from kivy.uix.anchorlayout import AnchorLayout
 from kivy.uix.boxlayout import BoxLayout
 from kivy.uix.button import Button
 from kivy.uix.label import Label
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.textinput import TextInput
+from kivy.uix.widget import Widget
 
 
 # ============================================================
-# تنظیمات اولیه
+# KharidYar - Version 1.0.0
 # ============================================================
 
 APP_NAME = "خریدیار"
@@ -27,43 +27,32 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 ASSETS_DIR = os.path.join(BASE_DIR, "assets")
 FONT_PATH = os.path.join(ASSETS_DIR, "Vazirmatn-Regular.ttf")
 
-# اطلاعات سازنده
-CREATOR_NAME = "عبدالله جعفری"
-
-# در صورت اجرای دسکتاپ، رنگ پس‌زمینه پنجره
-try:
-    Window.clearcolor = (0.96, 0.97, 0.98, 1)
-except Exception:
-    pass
-
 
 # ============================================================
 # فونت فارسی
 # ============================================================
 
+DEFAULT_FONT = "Roboto"
+
 if os.path.exists(FONT_PATH):
     try:
         LabelBase.register(
-            name="PersianFont",
-            fn_regular=FONT_PATH
+            name="KharidYarFont",
+            fn_regular=FONT_PATH,
         )
-        DEFAULT_FONT = "PersianFont"
+        DEFAULT_FONT = "KharidYarFont"
     except Exception:
-        DEFAULT_FONT = "Roboto"
-else:
-    DEFAULT_FONT = "Roboto"
+        pass
 
 
 # ============================================================
-# ابزارهای UI
+# ابزارهای رابط کاربری
 # ============================================================
 
-def make_label(
+def create_label(
     text="",
     font_size=16,
     bold=False,
-    halign="right",
-    valign="middle",
     color=(0.08, 0.09, 0.12, 1),
 ):
     label = Label(
@@ -71,35 +60,35 @@ def make_label(
         font_name=DEFAULT_FONT,
         font_size=dp(font_size),
         color=color,
-        halign=halign,
-        valign=valign,
         bold=bold,
+        halign="right",
+        valign="middle",
     )
 
     label.bind(
-        size=lambda instance, value: setattr(
-            instance, "text_size", value
-        )
+        size=lambda instance, value:
+        setattr(instance, "text_size", value)
     )
 
     return label
 
 
-def make_button(
+def create_button(
     text,
     callback=None,
-    height=50,
+    height=52,
+    background=(0.10, 0.42, 0.90, 1),
     font_size=16,
 ):
     button = Button(
         text=text,
         font_name=DEFAULT_FONT,
         font_size=dp(font_size),
+        color=(1, 1, 1, 1),
+        background_normal="",
+        background_color=background,
         size_hint_y=None,
         height=dp(height),
-        background_normal="",
-        background_color=(0.12, 0.45, 0.95, 1),
-        color=(1, 1, 1, 1),
     )
 
     if callback:
@@ -112,46 +101,71 @@ def make_button(
 # صفحه پایه
 # ============================================================
 
-class BasePage(BoxLayout):
+class Page(BoxLayout):
 
-    def __init__(self, app, **kwargs):
+    def __init__(self, app, title, **kwargs):
         super().__init__(
             orientation="vertical",
-            spacing=dp(10),
-            padding=dp(15),
+            spacing=dp(12),
+            padding=dp(16),
             **kwargs
         )
 
         self.app = app
 
-        # عنوان
-        title = make_label(
-            APP_NAME,
-            font_size=25,
+        header = BoxLayout(
+            orientation="horizontal",
+            size_hint_y=None,
+            height=dp(58),
+            spacing=dp(8),
+        )
+
+        menu_button = create_button(
+            "☰",
+            self.open_menu,
+            height=50,
+            background=(0.10, 0.42, 0.90, 1),
+            font_size=22,
+        )
+
+        menu_button.size_hint_x = None
+        menu_button.width = dp(58)
+
+        header.add_widget(menu_button)
+
+        title_label = create_label(
+            title,
+            font_size=22,
             bold=True,
-            halign="right",
             color=(0.05, 0.20, 0.45, 1),
         )
 
-        title.size_hint_y = None
-        title.height = dp(55)
+        header.add_widget(title_label)
 
-        self.add_widget(title)
+        self.add_widget(header)
+
+    def open_menu(self, *_):
+        self.app.toggle_menu()
 
 
 # ============================================================
-# صفحه اصلی
+# صفحه خانه
 # ============================================================
 
-class HomePage(BasePage):
+class HomePage(Page):
 
     def __init__(self, app, **kwargs):
-        super().__init__(app, **kwargs)
+        super().__init__(
+            app,
+            "خریدیار",
+            **kwargs
+        )
 
-        welcome = make_label(
-            "به خریدیار خوش آمدید 👋",
-            font_size=23,
+        welcome = create_label(
+            "خوش آمدید 👋",
+            font_size=25,
             bold=True,
+            color=(0.05, 0.20, 0.45, 1),
         )
 
         welcome.size_hint_y = None
@@ -159,61 +173,55 @@ class HomePage(BasePage):
 
         self.add_widget(welcome)
 
-        description = make_label(
-            "دستیار هوشمند خرید برای پیدا کردن، بررسی و مقایسه کالاها.",
+        intro = create_label(
+            "دستیار هوشمند خرید شما برای پیدا کردن، "
+            "بررسی و انتخاب بهتر کالاها.",
             font_size=17,
         )
 
-        description.size_hint_y = None
-        description.height = dp(70)
+        intro.size_hint_y = None
+        intro.height = dp(75)
 
-        self.add_widget(description)
+        self.add_widget(intro)
 
         self.add_widget(
-            make_button(
-                "🤖 دستیار هوشمند",
+            create_button(
+                "🤖  دستیار هوشمند",
                 lambda *_: app.show_page("ai"),
             )
         )
 
         self.add_widget(
-            make_button(
-                "🔎 جستجوی کالا",
+            create_button(
+                "🔎  جستجوی کالا",
                 lambda *_: app.show_page("search"),
             )
         )
 
         self.add_widget(
-            make_button(
-                "⭐ علاقه‌مندی‌ها",
+            create_button(
+                "⭐  علاقه‌مندی‌ها",
                 lambda *_: app.show_page("favorites"),
             )
         )
 
-        self.add_widget(Label())
+        self.add_widget(Widget())
 
 
 # ============================================================
 # صفحه جستجو
 # ============================================================
 
-class SearchPage(BasePage):
+class SearchPage(Page):
 
     def __init__(self, app, **kwargs):
-        super().__init__(app, **kwargs)
-
-        title = make_label(
-            "🔎 جستجوی کالا",
-            font_size=21,
-            bold=True,
+        super().__init__(
+            app,
+            "جستجوی کالا",
+            **kwargs
         )
 
-        title.size_hint_y = None
-        title.height = dp(50)
-
-        self.add_widget(title)
-
-        self.search_input = TextInput(
+        self.input = TextInput(
             hint_text="نام کالا را وارد کنید...",
             font_name=DEFAULT_FONT,
             font_size=dp(17),
@@ -224,181 +232,183 @@ class SearchPage(BasePage):
             padding=[dp(12), dp(12)],
         )
 
-        self.add_widget(self.search_input)
+        self.add_widget(self.input)
 
         self.add_widget(
-            make_button(
-                "جستجو",
-                self.perform_search,
+            create_button(
+                "🔎 جستجو",
+                self.search,
             )
         )
 
-        self.result_label = make_label(
-            "نتایج جستجو در این قسمت نمایش داده می‌شود.",
+        self.result = create_label(
+            "نتایج جستجو اینجا نمایش داده می‌شود.",
             font_size=16,
         )
 
-        self.result_label.size_hint_y = None
-        self.result_label.height = dp(150)
+        self.result.size_hint_y = None
+        self.result.height = dp(180)
 
-        self.add_widget(self.result_label)
+        self.add_widget(self.result)
 
-        self.add_widget(Label())
+        self.add_widget(Widget())
 
-    def perform_search(self, *_):
-        query = self.search_input.text.strip()
+    def search(self, *_):
+        query = self.input.text.strip()
 
         if not query:
-            self.result_label.text = (
-                "لطفاً ابتدا نام کالا را وارد کنید."
+            self.result.text = (
+                "لطفاً نام کالای موردنظر را وارد کنید."
             )
             return
 
-        self.result_label.text = (
-            "🔎 در حال بررسی:\n\n"
+        self.result.text = (
+            "🔎 جستجو برای:\n\n"
             + query
             + "\n\n"
-            "در نسخه بعدی، نتایج واقعی فروشگاه‌ها و مقایسه قیمت "
-            "به این بخش متصل خواهد شد."
+            "سیستم مقایسه کالا در مرحله بعد "
+            "به سرویس‌های واقعی متصل خواهد شد."
         )
 
 
 # ============================================================
-# صفحه دستیار AI
+# صفحه هوش مصنوعی
 # ============================================================
 
-class AIPage(BasePage):
-
-    busy = BooleanProperty(False)
+class AIPage(Page):
 
     def __init__(self, app, **kwargs):
-        super().__init__(app, **kwargs)
-
-        title = make_label(
-            "🤖 دستیار هوشمند خریدیار",
-            font_size=21,
-            bold=True,
+        super().__init__(
+            app,
+            "دستیار هوشمند",
+            **kwargs
         )
 
-        title.size_hint_y = None
-        title.height = dp(50)
+        self.busy = False
 
-        self.add_widget(title)
+        self.messages = ScrollView()
 
-        self.chat_scroll = ScrollView(
-            size_hint=(1, 1)
-        )
-
-        self.chat_content = BoxLayout(
+        self.message_box = BoxLayout(
             orientation="vertical",
             spacing=dp(10),
-            padding=dp(10),
+            padding=dp(8),
             size_hint_y=None,
         )
 
-        self.chat_content.bind(
-            minimum_height=self.chat_content.setter(
+        self.message_box.bind(
+            minimum_height=self.message_box.setter(
                 "height"
             )
         )
 
-        self.chat_scroll.add_widget(self.chat_content)
+        self.messages.add_widget(
+            self.message_box
+        )
 
-        self.add_widget(self.chat_scroll)
+        self.add_widget(self.messages)
 
-        input_layout = BoxLayout(
+        input_bar = BoxLayout(
             orientation="horizontal",
             spacing=dp(8),
             size_hint_y=None,
-            height=dp(55),
+            height=dp(58),
         )
 
-        self.ai_input = TextInput(
-            hint_text="مثلاً: یک گوشی خوب تا ۲۰ میلیون پیشنهاد بده",
+        self.input = TextInput(
+            hint_text="سؤال خود را درباره خرید بنویسید...",
             font_name=DEFAULT_FONT,
             font_size=dp(15),
             multiline=False,
             halign="right",
         )
 
-        send_button = make_button(
+        input_bar.add_widget(self.input)
+
+        send = create_button(
             "ارسال",
-            self.send_message,
-            height=55,
+            self.send,
+            height=58,
             font_size=15,
         )
 
-        send_button.size_hint_x = None
-        send_button.width = dp(85)
+        send.size_hint_x = None
+        send.width = dp(85)
 
-        input_layout.add_widget(self.ai_input)
-        input_layout.add_widget(send_button)
+        input_bar.add_widget(send)
 
-        self.add_widget(input_layout)
+        self.add_widget(input_bar)
 
         self.add_message(
-            "خریدیار",
-            "سلام! 👋\nمن دستیار هوشمند خرید شما هستم. "
-            "سؤال خود را درباره خرید بپرسید."
+            "خریدیار 🤖",
+            "سلام! 👋\n"
+            "من دستیار هوشمند خریدیار هستم.\n"
+            "می‌توانی درباره انتخاب و خرید کالا از من سؤال کنی."
         )
 
-    def add_message(self, sender, message):
-        box = BoxLayout(
+    def add_message(self, sender, text):
+
+        container = BoxLayout(
             orientation="vertical",
             size_hint_y=None,
             padding=dp(8),
-            spacing=dp(3),
         )
 
-        sender_label = make_label(
+        sender_label = create_label(
             sender,
             font_size=14,
             bold=True,
+            color=(0.05, 0.20, 0.45, 1),
         )
 
         sender_label.size_hint_y = None
-        sender_label.height = dp(28)
+        sender_label.height = dp(30)
 
-        message_label = make_label(
-            message,
+        message_label = create_label(
+            text,
             font_size=15,
-            valign="top",
+        )
+
+        # ارتفاع مناسب برای پیام
+        line_count = max(
+            2,
+            text.count("\n") + 1
         )
 
         message_label.size_hint_y = None
-
-        # ارتفاع تقریبی برای متن
-        lines = max(
-            2,
-            message.count("\n") + 1
+        message_label.height = dp(
+            32 * line_count
         )
 
-        message_label.height = dp(35 * lines)
+        container.height = (
+            sender_label.height +
+            message_label.height +
+            dp(16)
+        )
 
-        box.add_widget(sender_label)
-        box.add_widget(message_label)
+        container.add_widget(sender_label)
+        container.add_widget(message_label)
 
-        self.chat_content.add_widget(box)
+        self.message_box.add_widget(container)
 
         Clock.schedule_once(
-            lambda *_: setattr(
-                self.chat_scroll,
-                "scroll_y",
-                0
-            ),
+            self.scroll_bottom,
             0.05
         )
 
-    def send_message(self, *_):
+    def scroll_bottom(self, *_):
+        self.messages.scroll_y = 0
+
+    def send(self, *_):
+
         if self.busy:
             return
 
-        text = self.ai_input.text.strip()
+        text = self.input.text.strip()
 
         if not text:
             return
 
-        self.ai_input.text = ""
+        self.input.text = ""
 
         self.add_message(
             "شما",
@@ -407,23 +417,30 @@ class AIPage(BasePage):
 
         self.busy = True
 
-        threading.Thread(
-            target=self.process_ai,
+        thread = threading.Thread(
+            target=self.ai_worker,
             args=(text,),
             daemon=True,
-        ).start()
+        )
 
-    def process_ai(self, text):
-        # فعلاً پاسخ محلی و سبک.
-        # اتصال واقعی AI در ai/assistant.py قرار می‌گیرد.
-        response = self.local_ai_response(text)
+        thread.start()
+
+    def ai_worker(self, text):
+
+        # این بخش فعلاً یک موتور آزمایشی سبک است.
+        # اتصال API واقعی AI در فایل ai/assistant.py
+        # انجام خواهد شد.
+
+        response = self.generate_demo_response(text)
 
         Clock.schedule_once(
-            lambda *_: self.finish_ai(response),
+            lambda *_:
+            self.ai_finished(response),
             0
         )
 
-    def finish_ai(self, response):
+    def ai_finished(self, response):
+
         self.add_message(
             "خریدیار 🤖",
             response
@@ -432,35 +449,38 @@ class AIPage(BasePage):
         self.busy = False
 
     @staticmethod
-    def local_ai_response(text):
-        lower = text.lower()
-
-        if "گوشی" in text:
-            return (
-                "حتماً 📱\n"
-                "برای پیشنهاد گوشی، بودجه، برند مورد علاقه و "
-                "کاربرد اصلی‌تان را بگویید.\n\n"
-                "مثلاً:\n"
-                "«یک گوشی برای بازی تا ۲۰ میلیون می‌خواهم.»"
-            )
-
-        if "لپتاپ" in text or "لپ‌تاپ" in text:
-            return (
-                "برای انتخاب لپ‌تاپ 💻، بودجه و کاربردتان را بگویید؛ "
-                "مثلاً برنامه‌نویسی، بازی، طراحی یا استفاده روزمره."
-            )
+    def generate_demo_response(text):
 
         if "سلام" in text:
             return (
                 "سلام 👋\n"
-                "خوش آمدید. چه چیزی می‌خواهید بخرید؟"
+                "خوش آمدی! چه چیزی می‌خواهی بخری؟"
+            )
+
+        if "گوشی" in text:
+            return (
+                "برای انتخاب گوشی 📱، بودجه و کاربردت را بگو.\n\n"
+                "مثلاً:\n"
+                "«یک گوشی مناسب بازی تا ۲۰ میلیون می‌خواهم.»"
+            )
+
+        if "لپ" in text:
+            return (
+                "برای انتخاب لپ‌تاپ 💻، بودجه و کاربرد اصلی "
+                "را بگو؛ مثلاً برنامه‌نویسی، بازی یا کار روزمره."
+            )
+
+        if "تلویزیون" in text:
+            return (
+                "برای انتخاب تلویزیون 📺، اندازه صفحه، بودجه "
+                "و برند مورد علاقه‌ات را بگو."
             )
 
         return (
             "سؤال شما دریافت شد ✅\n\n"
-            "در نسخه فعلی، پاسخ آزمایشی نمایش داده می‌شود. "
-            "اتصال به سرویس هوش مصنوعی واقعی در ماژول AI پروژه "
-            "قرار خواهد گرفت."
+            "در نسخه نهایی، این قسمت به هوش مصنوعی واقعی "
+            "خریدیار متصل می‌شود تا بتواند سؤال شما را تحلیل "
+            "و برای خرید پیشنهاد مناسب ارائه کند."
         )
 
 
@@ -468,130 +488,160 @@ class AIPage(BasePage):
 # علاقه‌مندی‌ها
 # ============================================================
 
-class FavoritesPage(BasePage):
+class FavoritesPage(Page):
 
     def __init__(self, app, **kwargs):
-        super().__init__(app, **kwargs)
-
-        title = make_label(
-            "⭐ علاقه‌مندی‌ها",
-            font_size=21,
-            bold=True,
+        super().__init__(
+            app,
+            "علاقه‌مندی‌ها",
+            **kwargs
         )
 
-        title.size_hint_y = None
-        title.height = dp(55)
-
-        self.add_widget(title)
-
-        text = make_label(
-            "هنوز کالایی به علاقه‌مندی‌ها اضافه نشده است.\n\n"
-            "در نسخه‌های بعدی می‌توانید کالاهای مورد علاقه خود "
-            "را ذخیره و مقایسه کنید.",
-            font_size=16,
+        label = create_label(
+            "⭐ هنوز کالایی ذخیره نشده است.\n\n"
+            "کالاهای مورد علاقه شما در این قسمت "
+            "ذخیره خواهند شد.",
+            font_size=17,
         )
 
-        self.add_widget(text)
+        self.add_widget(label)
 
-        self.add_widget(Label())
+        self.add_widget(Widget())
 
 
 # ============================================================
 # تنظیمات
 # ============================================================
 
-class SettingsPage(BasePage):
+class SettingsPage(Page):
 
     def __init__(self, app, **kwargs):
-        super().__init__(app, **kwargs)
-
-        title = make_label(
-            "⚙️ تنظیمات",
-            font_size=21,
-            bold=True,
+        super().__init__(
+            app,
+            "تنظیمات",
+            **kwargs
         )
 
-        title.size_hint_y = None
-        title.height = dp(55)
-
-        self.add_widget(title)
-
         self.add_widget(
-            make_button(
+            create_button(
                 "🌐 زبان: فارسی",
-                self.language_message,
+                self.language,
             )
         )
 
         self.add_widget(
-            make_button(
+            create_button(
                 "🔔 اعلان‌ها",
-                self.notification_message,
+                self.notifications,
             )
         )
 
         self.add_widget(
-            make_button(
-                "ℹ️ نسخه برنامه: " + APP_VERSION,
-                None,
+            create_button(
+                "🎨 ظاهر برنامه",
+                self.appearance,
             )
         )
 
-        self.add_widget(Label())
+        version = create_label(
+            "نسخه خریدیار: " + APP_VERSION,
+            font_size=16,
+        )
 
-    def language_message(self, *_):
+        version.size_hint_y = None
+        version.height = dp(60)
+
+        self.add_widget(version)
+
+        self.add_widget(Widget())
+
+    def language(self, *_):
         pass
 
-    def notification_message(self, *_):
+    def notifications(self, *_):
+        pass
+
+    def appearance(self, *_):
         pass
 
 
 # ============================================================
-# درباره سازنده
+# درباره برنامه
 # ============================================================
 
-class AboutPage(BasePage):
+class AboutPage(Page):
 
     def __init__(self, app, **kwargs):
-        super().__init__(app, **kwargs)
+        super().__init__(
+            app,
+            "درباره خریدیار",
+            **kwargs
+        )
 
-        title = make_label(
-            "ℹ️ درباره خریدیار",
-            font_size=22,
+        scroll = ScrollView()
+
+        content = BoxLayout(
+            orientation="vertical",
+            spacing=dp(15),
+            padding=dp(10),
+            size_hint_y=None,
+        )
+
+        content.bind(
+            minimum_height=content.setter(
+                "height"
+            )
+        )
+
+        title = create_label(
+            "🛒 خریدیار",
+            font_size=28,
             bold=True,
+            color=(0.05, 0.20, 0.45, 1),
         )
 
         title.size_hint_y = None
-        title.height = dp(55)
+        title.height = dp(70)
 
-        self.add_widget(title)
+        content.add_widget(title)
 
-        about = make_label(
-            "خریدیار\n\n"
-            "دستیار هوشمند خرید برای کمک به کاربران در "
-            "پیدا کردن و انتخاب بهتر کالاها.\n\n"
-            "نسخه: " + APP_VERSION,
+        description = create_label(
+            "خریدیار یک دستیار هوشمند خرید است که "
+            "برای کمک به پیدا کردن، بررسی و انتخاب بهتر "
+            "کالاها طراحی شده است.",
             font_size=17,
         )
 
-        about.size_hint_y = None
-        about.height = dp(180)
+        description.size_hint_y = None
+        description.height = dp(130)
 
-        self.add_widget(about)
+        content.add_widget(description)
 
-        creator = make_label(
+        creator = create_label(
             "👨‍💻 سازنده\n\n"
-            + CREATOR_NAME,
+            "عبدالله جعفری",
             font_size=18,
             bold=True,
         )
 
         creator.size_hint_y = None
-        creator.height = dp(130)
+        creator.height = dp(120)
 
-        self.add_widget(creator)
+        content.add_widget(creator)
 
-        self.add_widget(Label())
+        version = create_label(
+            "نسخه " + APP_VERSION,
+            font_size=15,
+        )
+
+        version.size_hint_y = None
+        version.height = dp(50)
+
+        content.add_widget(version)
+
+        scroll.add_widget(content)
+
+        self.add_widget(scroll)
 
 
 # ============================================================
@@ -601,9 +651,10 @@ class AboutPage(BasePage):
 class SideMenu(BoxLayout):
 
     def __init__(self, app, **kwargs):
+
         super().__init__(
             orientation="vertical",
-            spacing=dp(8),
+            spacing=dp(7),
             padding=dp(12),
             size_hint_x=None,
             width=dp(285),
@@ -612,7 +663,7 @@ class SideMenu(BoxLayout):
 
         self.app = app
 
-        header = make_label(
+        header = create_label(
             "🛒 خریدیار",
             font_size=25,
             bold=True,
@@ -620,68 +671,71 @@ class SideMenu(BoxLayout):
         )
 
         header.size_hint_y = None
-        header.height = dp(75)
+        header.height = dp(70)
 
         self.add_widget(header)
 
-        self.add_menu_button(
+        self.menu_item(
             "🏠 صفحه اصلی",
             "home"
         )
 
-        self.add_menu_button(
+        self.menu_item(
             "🤖 دستیار هوشمند",
             "ai"
         )
 
-        self.add_menu_button(
+        self.menu_item(
             "🔎 جستجوی کالا",
             "search"
         )
 
-        self.add_menu_button(
+        self.menu_item(
             "⭐ علاقه‌مندی‌ها",
             "favorites"
         )
 
-        self.add_menu_button(
+        self.menu_item(
             "⚙️ تنظیمات",
             "settings"
         )
 
-        self.add_widget(Label())
+        self.add_widget(Widget())
 
-        self.add_menu_button(
+        self.menu_item(
             "ℹ️ درباره خریدیار",
             "about"
         )
 
-    def add_menu_button(self, text, page):
+    def menu_item(self, text, page):
+
         button = Button(
             text=text,
             font_name=DEFAULT_FONT,
             font_size=dp(16),
+            color=(0.05, 0.07, 0.10, 1),
+            background_normal="",
+            background_color=(0.91, 0.94, 0.98, 1),
             size_hint_y=None,
             height=dp(52),
-            background_normal="",
-            background_color=(0.90, 0.93, 0.97, 1),
-            color=(0.06, 0.08, 0.12, 1),
         )
 
         button.bind(
-            on_release=lambda *_: self.app.show_page(page)
+            on_release=lambda *_:
+            self.app.select_menu(page)
         )
 
         self.add_widget(button)
 
 
 # ============================================================
-# رابط اصلی
+# ریشه برنامه
 # ============================================================
 
-class MainRoot(BoxLayout):
+class RootLayout(BoxLayout):
 
     def __init__(self, app, **kwargs):
+
         super().__init__(
             orientation="horizontal",
             **kwargs
@@ -700,7 +754,7 @@ class MainRoot(BoxLayout):
 
 
 # ============================================================
-# برنامه اصلی
+# برنامه
 # ============================================================
 
 class KharidYarApp(App):
@@ -708,35 +762,48 @@ class KharidYarApp(App):
     title = APP_NAME
 
     def build(self):
-        self.root_layout = MainRoot(self)
 
-        self.pages = {}
+        self.root_layout = RootLayout(self)
 
-        self.create_pages()
+        self.pages = {
+            "home": HomePage(self),
+            "ai": AIPage(self),
+            "search": SearchPage(self),
+            "favorites": FavoritesPage(self),
+            "settings": SettingsPage(self),
+            "about": AboutPage(self),
+        }
 
         self.show_page("home")
 
         return self.root_layout
 
-    def create_pages(self):
-
-        self.pages["home"] = HomePage(self)
-        self.pages["ai"] = AIPage(self)
-        self.pages["search"] = SearchPage(self)
-        self.pages["favorites"] = FavoritesPage(self)
-        self.pages["settings"] = SettingsPage(self)
-        self.pages["about"] = AboutPage(self)
-
     def show_page(self, page_name):
 
-        if page_name not in self.pages:
+        page = self.pages.get(page_name)
+
+        if page is None:
             return
 
         self.root_layout.content.clear_widgets()
 
-        self.root_layout.content.add_widget(
-            self.pages[page_name]
-        )
+        self.root_layout.content.add_widget(page)
+
+    def select_menu(self, page_name):
+
+        self.show_page(page_name)
+
+    def toggle_menu(self):
+
+        menu = self.root_layout.menu
+
+        if menu.parent is not None:
+            self.root_layout.remove_widget(menu)
+        else:
+            self.root_layout.add_widget(
+                menu,
+                index=0
+            )
 
 
 # ============================================================
