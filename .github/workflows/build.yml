@@ -1,0 +1,120 @@
+name: Build KharidYar APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-22.04
+
+    steps:
+
+      # ======================================================
+      # 1. دریافت Repository
+      # ======================================================
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+
+      # ======================================================
+      # 2. نصب Java 17
+      # ======================================================
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+
+      # ======================================================
+      # 3. نصب Python
+      # ======================================================
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+
+      # ======================================================
+      # 4. نصب وابستگی‌های سیستم
+      # ======================================================
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+
+          sudo apt-get install -y \
+            git \
+            zip \
+            unzip \
+            autoconf \
+            automake \
+            libtool \
+            pkg-config \
+            zlib1g-dev \
+            libncurses5-dev \
+            libncursesw5-dev \
+            cmake \
+            libffi-dev \
+            libssl-dev \
+            build-essential
+
+
+      # ======================================================
+      # 5. نصب Buildozer و Cython
+      # ======================================================
+
+      - name: Install Buildozer
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          python -m pip install buildozer
+          python -m pip install "cython==0.29.36"
+
+
+      # ======================================================
+      # 6. پاک کردن Cache قدیمی
+      # ======================================================
+
+      - name: Clean Buildozer cache
+        run: |
+          rm -rf .buildozer
+          rm -rf bin
+
+
+      # ======================================================
+      # 7. ساخت APK
+      # ======================================================
+
+      - name: Build debug APK
+        run: |
+          yes | buildozer android debug
+
+
+      # ======================================================
+      # 8. نمایش APK ساخته‌شده
+      # ======================================================
+
+      - name: List generated APK
+        run: |
+          echo "Generated APK files:"
+          find bin -type f -name "*.apk" -print
+
+
+      # ======================================================
+      # 9. آپلود APK
+      # ======================================================
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: KharidYar-APK
+          path: bin/*.apk
+          if-no-files-found: error
