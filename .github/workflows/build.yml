@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-22.04
 
     steps:
+
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -44,18 +45,22 @@ jobs:
             libssl-dev \
             build-essential
 
-      - name: Install Buildozer
+      - name: Install Python build tools
         run: |
           python -m pip install --upgrade pip
           python -m pip install setuptools wheel
           python -m pip install "cython==0.29.36"
           python -m pip install "buildozer==1.5.0"
 
-      - name: Verify Python
+      - name: Pin python-for-android
+        run: |
+          python -m pip install "python-for-android==2024.01.21"
+
+      - name: Verify tools
         run: |
           python --version
-          python -c "import sys; print(sys.executable)"
           buildozer --version
+          p4a --version
 
       - name: Clean
         run: |
