@@ -8,45 +8,25 @@ on:
 
 jobs:
   build:
-    name: Build Android APK
     runs-on: ubuntu-22.04
 
     steps:
 
-      # ======================================================
-      # Checkout
-      # ======================================================
-
-      - name: Checkout repository
+      - name: Checkout
         uses: actions/checkout@v4
 
-
-      # ======================================================
-      # Java 17
-      # ======================================================
-
-      - name: Set up Java 17
+      - name: Setup Java 17
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
-
-      # ======================================================
-      # Python 3.11
-      # ======================================================
-
-      - name: Set up Python 3.11
+      - name: Setup Python 3.11
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-
-      # ======================================================
-      # System dependencies
-      # ======================================================
-
-      - name: Install system dependencies
+      - name: Install system packages
         run: |
           sudo apt-get update
 
@@ -54,6 +34,7 @@ jobs:
             git \
             zip \
             unzip \
+            openjdk-17-jdk \
             autoconf \
             automake \
             libtool \
@@ -61,56 +42,41 @@ jobs:
             zlib1g-dev \
             libncurses5-dev \
             libncursesw5-dev \
+            libtinfo5 \
             cmake \
             libffi-dev \
             libssl-dev \
             build-essential
 
-
-      # ======================================================
-      # Python dependencies
-      # ======================================================
-
-      - name: Install Buildozer
+      - name: Install Build tools
         run: |
           python -m pip install --upgrade pip
           python -m pip install setuptools wheel
-          python -m pip install buildozer
           python -m pip install "cython==0.29.36"
+          python -m pip install "buildozer==1.5.0"
 
+      - name: Show versions
+        run: |
+          python --version
+          pip --version
+          buildozer --version
+          cython --version
 
-      # ======================================================
-      # Clean previous build
-      # ======================================================
-
-      - name: Clean Buildozer
+      - name: Clean build
         run: |
           rm -rf .buildozer
           rm -rf bin
 
-
-      # ======================================================
-      # Build APK
-      # ======================================================
-
       - name: Build APK
+        env:
+          PIP_DISABLE_PIP_VERSION_CHECK: "1"
         run: |
-          yes | buildozer android debug
+          yes | buildozer -v android debug
 
-
-      # ======================================================
-      # Check APK
-      # ======================================================
-
-      - name: Check APK
+      - name: Verify APK
         run: |
-          echo "APK files:"
+          test -n "$(find bin -type f -name '*.apk' -print -quit)"
           find bin -type f -name "*.apk" -print
-
-
-      # ======================================================
-      # Upload APK
-      # ======================================================
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
