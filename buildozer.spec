@@ -20,14 +20,13 @@ orientation = portrait
 # وابستگی‌های Python
 # ============================================================
 
-requirements = python3==3.12.10,kivy
-
+requirements = python3,kivy
 
 # ============================================================
 # تنظیمات Android
 # ============================================================
 
-android.api = 35
+android.api = 34
 android.minapi = 24
 
 android.ndk = 27c
