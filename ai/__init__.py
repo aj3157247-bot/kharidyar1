@@ -1,0 +1,1 @@
+# KharidYar AI package
